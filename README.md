@@ -32,7 +32,7 @@ python3 bm.py
 
 ● You successfully loaded the program if you see the following...
 
-![Still working on this...]()
+![Still working on this...](https://github.com/kphanipavan/WallMark/blob/master/Images/mainMenu.png)
 
 ● From here, you can read the instructions provided in the program.
 
@@ -44,7 +44,7 @@ python3 bm.py
 
 ● The first one, *Guided Parameter Entry*, will ask you in detail, what configuration of benchmark you want to run, as shown below:
 
-![Still working on this too...]()
+![Still working on this too...](https://github.com/kphanipavan/WallMark/blob/master/Images/guidedBM.png)
 
 ● The second option assumes you have prior knowledge of what parameters are needed, and hence the the input is given as an array, as shown below:
 
@@ -54,7 +54,7 @@ python3 bm.py
 
 ● WallMark has the result file decoder inbuilt and can be accessed via the Main Menu, as shown below:
 
-![To be Done]()
+![To be Done](https://github.com/kphanipavan/WallMark/blob/master/Images/decoderMode.png)
 
 # Important Notes:
 
