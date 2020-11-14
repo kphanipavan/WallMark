@@ -1,43 +1,13 @@
 import sys, time, gc, subprocess
-from pytz import timezone
-from datetime import datetime
 from multiprocessing import Process
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import platform, math
-format = r"%Y-%m-%d %H:%M:%S %Z%z"
-menuList = ['1. Run a Benchmark', '2. Load a result', '3. Quit']
-now_utc = datetime.now(timezone('UTC'))
-now_asia = now_utc.astimezone(timezone('Asia/Kolkata'))
-now_asia = now_asia.strftime(format)
-print(now_asia)
-lastResult = None
-try:
-    import cpuinfo as c
-    __ = c.cpuinfo
-except:
-    print('Some Packages were not found, Installing it...')
-    subprocess.check_call(
-        [sys.executable, '-m', 'pip', 'install', 'py-cpuinfo'])
-    import cpuinfo as c
-pi = 3.1415926535
-two = 7732
-spacer = chr(8377)
-imageComposer = {
-    '1': [255, 0, 0],
-    '0': [0, 255, 0],
-    chr(8377): [0, 0, 255],
-    ' ': [0, 0, 0]
-}
-imageDecomposer = {
-    (255, 0, 0): '1',
-    (0, 255, 0): '0',
-    (0, 0, 255): chr(8377),
-    (0, 0, 0): ' '
-}
+from varsNparser import *
+
 print('Ready, Loaded.')
-cpuInfo = c.get_cpu_info()
+cpuInfo = cpuinfo()
 
 
 def main(Threads=1, calcs=1, loop=1, tp=None, showPlot=False, saveToFile=True):
@@ -105,9 +75,12 @@ def main(Threads=1, calcs=1, loop=1, tp=None, showPlot=False, saveToFile=True):
     if saveToFile:
         load = {
             'Platform': platform.platform(),
+            'OS': cpuInfo['OS'],
             'Python Version': platform.python_version(),
-            'CPU Info': cpuInfo['brand_raw'],
-            'Thread Count': cpuInfo['count'],
+            'CPU Info': cpuInfo['CPU Name'],
+            'Core Count': cpuInfo['Cores'],
+            'Thread Count': cpuInfo['Threads'],
+            'SMT': cpuInfo['SMT'],
             'Benchmark Config': {
                 'Calculation Type': tp,
                 'Threads Used': Threads,
@@ -169,8 +142,8 @@ def encoder(resBook):
 def resultPrinter(dataDict):
     keys = list(dataDict.keys())
     if list(keys) != [
-            'Platform', 'Python Version', 'CPU Info', 'Thread Count',
-            'Benchmark Config', 'Result', 'Timestamp'
+            'Platform', 'OS', 'Python Version', 'CPU Info', 'Core Count',
+            'Thread Count', 'SMT', 'Benchmark Config', 'Result', 'Timestamp'
     ]:
         print(
             'Error with data, Data is not as Expected, Try rerunning Benchmarks.'
@@ -178,9 +151,12 @@ def resultPrinter(dataDict):
     else:
         print('\n' * 4)
         print('Platform: ', dataDict['Platform'])
+        print('OS: ', dataDict['OS'])
         print('Python Version: ', dataDict['Python Version'])
         print('CPU Info: ', dataDict['CPU Info'])
+        print('CPU Core Count: ', dataDict['Core Count'])
         print('CPU Thread Count: ', dataDict['Thread Count'])
+        print('Hyperthreading: ', (True if dataDict['SMT'] else False))
         print('Benchmark Config: ')
         print('\tCalculation Type: ',
               dataDict['Benchmark Config']['Calculation Type'])
@@ -271,18 +247,18 @@ def bmMenu():
                 try:
                     tr = int(
                         input('Enter the number of Threads to use({} max): '.
-                              format(cpuInfo['count'])))
+                              format(cpuInfo['Threads'])))
                     if tr == 0:
                         return None
-                    if tr > cpuInfo['count']:
+                    if tr > cpuInfo['Threads']:
                         print(
                             'Your CPU has a maximum of {} Threads, Enter a number less than that...'
-                            .format(cpuInfo['count']))
+                            .format(cpuInfo['Threads']))
                     else:
                         break
                 except:
                     print('Enter a number less than or equal to {}, not text'.
-                          format(cpuInfo['count']))
+                          format(cpuInfo['Threads']))
             payload.append(tr)
             del tr
             while True:
@@ -362,7 +338,82 @@ def bmMenu():
             main(payload[0], payload[1], payload[2], payload[3], payload[4],
                  payload[5])
         elif sel == 2:
-            pass
+            while True:
+                print('Enter Parameters:')
+                print(
+                    'Threads ({} max), Calcs, Loops, Calc Type(int or float), Show Plot(True or False), Save Result to file(True or False)'
+                    .format(cpuInfo['Threads']))
+                x = input(': ')
+                x = x.split(',')
+                x = [i.strip() for i in x]
+                print(x)
+                if '0' in x:
+                    print('Leaving to Main Menu.')
+                    break
+                try:
+                    x[0] = int(x[0])
+                    if x[0] > cpuInfo['Threads']:
+                        print('Too many Threads mentioned.')
+                        continue
+                    if x[0] <= 0:
+                        print('Enter a valid number of threads.')
+                        continue
+                except:
+                    print('Enter Threads in integer number.')
+                    continue
+                try:
+                    x[1] = int(x[1])
+                    if x[1] <= 0:
+                        print(
+                            'Enter a valid number of Calculations in Millions')
+                        continue
+                except:
+                    print('Enter a Number, greater than 0.')
+                    continue
+                try:
+                    x[2] = int(x[2])
+                    if x[2] <= 0:
+                        print('Enter a valid number of loops.')
+                        continue
+                except:
+                    print("Enter a valid number of loops.")
+                    continue
+                if x[3].lower() == 'int':
+                    x[3] = 'INT'
+                elif x[3].lower() == 'float':
+                    x[3] = 'FLOAT'
+                else:
+                    print('Enter a valid calc mode.')
+                    continue
+                try:
+                    if x[4].lower() == 'true' or x[4].lower() == 't':
+                        x[4] = True
+                    elif x[4].lower() == 'false' or x[4].lower() == 'f':
+                        x[4] = False
+                    else:
+                        print('Enter a proper true or false for Show Plot')
+                        continue
+                except:
+                    print(
+                        'Enter a proper string, True or False, for Show Plot')
+                    continue
+                try:
+                    if x[5].lower() == 'true' or x[5].lower() == 't':
+                        x[5] = True
+                        break
+                    elif x[5].lower() == 'false' or x[5].lower() == 'f':
+                        x[5] = False
+                        break
+                    else:
+                        print('Enter a proper true or false for Save to File')
+                        continue
+                except:
+                    print(
+                        'Enter a proper string, True or False, for Save to File'
+                    )
+                    continue
+            print(x)
+            main(x[0], x[1], x[2], x[3], x[4], x[5])
         else:
             print('Program Corrupt!!!')
             exit()
@@ -398,12 +449,6 @@ def cli():
 
 
 if __name__ == '__main__':
-    print('Welcome to WallMark™️\n')
+    print('Welcome to WallMark™️ V0.0.1 PreRelease 1\n')
     print('*** Enter 0 as input to return to the Main Menu ***')
     cli()
-    #main(Threads=2, calcs=10000000, loop=1, tp='int', saveToFile=True)
-    #imageDecoder('result.png')
-    #main(Threads=2, calcs=100000000, loop=10, tp='int', saveToFile=True)
-    #main(Threads=3, calcs=100000000, loop=10, tp='int', saveToFile=True)
-    #main(Threads=4, calcs=100000000, loop=10, tp='int', saveToFile=True)
-    #print(decoder(encoder({'a': 123123123, 'asdasda': 'asdasdasd'})))
