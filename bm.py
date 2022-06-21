@@ -1,9 +1,13 @@
-import sys, time, gc, subprocess
+import sys
+import time
+import gc
+import subprocess
 from multiprocessing import Process
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import platform, math
+import platform
+import math
 from varsNparser import *
 
 print('Ready, Loaded.')
@@ -72,6 +76,7 @@ def main(Threads=1, calcs=1, loop=1, tp=None, showPlot=False, saveToFile=True):
     print('Min: {}'.format(min(res)))
     print('Avg: {}'.format(np.average(res)))
     print('Std: {}'.format(np.std(res)))
+    print('Sum: {}'.format(np.sum(res)))
     if saveToFile:
         load = {
             'Platform': platform.platform(),
@@ -91,7 +96,8 @@ def main(Threads=1, calcs=1, loop=1, tp=None, showPlot=False, saveToFile=True):
                 'Max': max(res),
                 'Min': min(res),
                 'Avg': np.average(res),
-                'Std': np.std(res)
+                'Std': np.std(res),
+                'Sum': np.sum(res)
             },
             'Timestamp': now_asia
         }
@@ -170,6 +176,10 @@ def resultPrinter(dataDict):
         print('\tMinimum: ', dataDict['Result']['Min'])
         print('\tAverage: ', dataDict['Result']['Avg'])
         print('\tStandard deviation: ', dataDict['Result']['Std'])
+        try:
+            print('\tSum: ', dataDict['Result']['Sum'])
+        except:
+            pass
         print('Timestamp: ', dataDict['Timestamp'])
         print('\n')
 
@@ -225,201 +235,201 @@ def pacer(num):
 
 
 def bmMenu():
-    try:
-        print('Enter your selection:')
-        print('1. Guided Parameter entry')
-        print('2. Advanced Parameter entry')
+    # try:
+    print('Enter your selection:')
+    print('1. Guided Parameter entry')
+    print('2. Advanced Parameter entry')
+    while True:
+        try:
+            sel = int(input('Selection: '))
+            if sel == 0:
+                return None
+            if sel in [1, 2]:
+                break
+            else:
+                print('Enter the corresponding number.')
+        except:
+            print("Enter the corresponding number, not text.")
+            continue
+    if sel == 1:
+        payload = []
         while True:
             try:
-                sel = int(input('Selection: '))
-                if sel == 0:
+                tr = int(
+                    input('Enter the number of Threads to use({} max): '.
+                          format(cpuInfo['Threads'])))
+                if tr == 0:
                     return None
-                if sel in [1, 2]:
-                    break
+                if tr > cpuInfo['Threads']:
+                    print(
+                        'Your CPU has a maximum of {} Threads, Enter a number less than that...'
+                        .format(cpuInfo['Threads']))
                 else:
-                    print('Enter the corresponding number.')
+                    break
             except:
-                print("Enter the corresponding number, not text.")
-                continue
-        if sel == 1:
-            payload = []
-            while True:
-                try:
-                    tr = int(
-                        input('Enter the number of Threads to use({} max): '.
-                              format(cpuInfo['Threads'])))
-                    if tr == 0:
-                        return None
-                    if tr > cpuInfo['Threads']:
-                        print(
-                            'Your CPU has a maximum of {} Threads, Enter a number less than that...'
-                            .format(cpuInfo['Threads']))
-                    else:
-                        break
-                except:
-                    print('Enter a number less than or equal to {}, not text'.
-                          format(cpuInfo['Threads']))
-            payload.append(tr)
-            del tr
-            while True:
-                try:
-                    cl = int(
-                        input(
-                            'Enter the number of Calculations in Millions: '))
-                    if cl == 0:
-                        return None
+                print('Enter a number less than or equal to {}, not text'.
+                      format(cpuInfo['Threads']))
+        payload.append(tr)
+        del tr
+        while True:
+            try:
+                cl = int(
+                    input(
+                        'Enter the number of Calculations in Millions: '))
+                if cl == 0:
+                    return None
+                break
+            except:
+                print('Enter a number, not text.')
+        payload.append(cl)
+        del cl
+        while True:
+            try:
+                lp = int(input("Enter the number of loops: "))
+                if lp == 0:
+                    return None
+                break
+            except:
+                print('Enter a number, not text.')
+        payload.append(lp)
+        while True:
+            try:
+                print('Enter the type of Calculation to be done.')
+                print('1. Integer')
+                print('2. Floating point number')
+                tp = int(input('Enter your selection: '))
+                if tp == 0:
+                    return None
+                if tp == 1:
+                    payload.append('int')
                     break
-                except:
-                    print('Enter a number, not text.')
-            payload.append(cl)
-            del cl
-            while True:
-                try:
-                    lp = int(input("Enter the number of loops: "))
-                    if lp == 0:
-                        return None
+                elif tp == 2:
+                    payload.append('float')
                     break
-                except:
-                    print('Enter a number, not text.')
-            payload.append(lp)
-            while True:
-                try:
-                    print('Enter the type of Calculation to be done.')
-                    print('1. Integer')
-                    print('2. Floating point number')
-                    tp = int(input('Enter your selection: '))
-                    if tp == 0:
-                        return None
-                    if tp == 1:
-                        payload.append('int')
-                        break
-                    elif tp == 2:
-                        payload.append('float')
-                        break
-                    else:
-                        print('Enter 1 or 2.')
-                except:
-                    print('Enter a number, not text.')
-            while True:
-                try:
-                    print('You want to see the plot of benchmark times?')
-                    print('1. Yes\n2. No')
-                    tp = int(input('Enter your selection: '))
-                    if tp == 0:
-                        return None
-                    if tp == 1:
-                        payload.append(True)
-                        break
-                    elif tp == 2:
-                        payload.append(False)
-                        break
-                    else:
-                        print('Enter 1 or 2.')
-                except:
-                    print('Enter a number, not text.')
-            while True:
-                try:
-                    print(
-                        'You want save the result to a WallMark encoded file?')
-                    print('1. Yes\n2. No')
-                    tp = int(input('Enter your selection: '))
-                    if tp == 0:
-                        return None
-                    if tp == 1:
-                        payload.append(True)
-                        break
-                    elif tp == 2:
-                        payload.append(False)
-                        break
-                    else:
-                        print('Enter 1 or 2.')
-                except:
-                    print('Enter a number, not text.')
-            main(payload[0], payload[1], payload[2], payload[3], payload[4],
-                 payload[5])
-        elif sel == 2:
-            while True:
-                print('Enter Parameters:')
-                print(
-                    'Threads ({} max), Calcs, Loops, Calc Type(int or float), Show Plot(True or False), Save Result to file(True or False)'
-                    .format(cpuInfo['Threads']))
-                x = input(': ')
-                x = x.split(',')
-                x = [i.strip() for i in x]
-                print(x)
-                if '0' in x:
-                    print('Leaving to Main Menu.')
-                    break
-                try:
-                    x[0] = int(x[0])
-                    if x[0] > cpuInfo['Threads']:
-                        print('Too many Threads mentioned.')
-                        continue
-                    if x[0] <= 0:
-                        print('Enter a valid number of threads.')
-                        continue
-                except:
-                    print('Enter Threads in integer number.')
-                    continue
-                try:
-                    x[1] = int(x[1])
-                    if x[1] <= 0:
-                        print(
-                            'Enter a valid number of Calculations in Millions')
-                        continue
-                except:
-                    print('Enter a Number, greater than 0.')
-                    continue
-                try:
-                    x[2] = int(x[2])
-                    if x[2] <= 0:
-                        print('Enter a valid number of loops.')
-                        continue
-                except:
-                    print("Enter a valid number of loops.")
-                    continue
-                if x[3].lower() == 'int':
-                    x[3] = 'INT'
-                elif x[3].lower() == 'float':
-                    x[3] = 'FLOAT'
                 else:
-                    print('Enter a valid calc mode.')
-                    continue
-                try:
-                    if x[4].lower() == 'true' or x[4].lower() == 't':
-                        x[4] = True
-                    elif x[4].lower() == 'false' or x[4].lower() == 'f':
-                        x[4] = False
-                    else:
-                        print('Enter a proper true or false for Show Plot')
-                        continue
-                except:
-                    print(
-                        'Enter a proper string, True or False, for Show Plot')
-                    continue
-                try:
-                    if x[5].lower() == 'true' or x[5].lower() == 't':
-                        x[5] = True
-                        break
-                    elif x[5].lower() == 'false' or x[5].lower() == 'f':
-                        x[5] = False
-                        break
-                    else:
-                        print('Enter a proper true or false for Save to File')
-                        continue
-                except:
-                    print(
-                        'Enter a proper string, True or False, for Save to File'
-                    )
-                    continue
+                    print('Enter 1 or 2.')
+            except:
+                print('Enter a number, not text.')
+        while True:
+            try:
+                print('You want to see the plot of benchmark times?')
+                print('1. Yes\n2. No')
+                tp = int(input('Enter your selection: '))
+                if tp == 0:
+                    return None
+                if tp == 1:
+                    payload.append(True)
+                    break
+                elif tp == 2:
+                    payload.append(False)
+                    break
+                else:
+                    print('Enter 1 or 2.')
+            except:
+                print('Enter a number, not text.')
+        while True:
+            try:
+                print(
+                    'You want save the result to a WallMark encoded file?')
+                print('1. Yes\n2. No')
+                tp = int(input('Enter your selection: '))
+                if tp == 0:
+                    return None
+                if tp == 1:
+                    payload.append(True)
+                    break
+                elif tp == 2:
+                    payload.append(False)
+                    break
+                else:
+                    print('Enter 1 or 2.')
+            except:
+                print('Enter a number, not text.')
+        main(payload[0], payload[1], payload[2], payload[3], payload[4],
+             payload[5])
+    elif sel == 2:
+        while True:
+            print('Enter Parameters:')
+            print(
+                'Threads ({} max), Calcs, Loops, Calc Type(int or float), Show Plot(True or False), Save Result to file(True or False)'
+                .format(cpuInfo['Threads']))
+            x = input(': ')
+            x = x.split(',')
+            x = [i.strip() for i in x]
             print(x)
-            main(x[0], x[1], x[2], x[3], x[4], x[5])
-        else:
-            print('Program Corrupt!!!')
-            exit()
-    except:
-        print('Process Stopped.')
-        return None
+            if '0' in x:
+                print('Leaving to Main Menu.')
+                break
+            try:
+                x[0] = int(x[0])
+                if x[0] > cpuInfo['Threads']:
+                    print('Too many Threads mentioned.')
+                    continue
+                if x[0] <= 0:
+                    print('Enter a valid number of threads.')
+                    continue
+            except:
+                print('Enter Threads in integer number.')
+                continue
+            try:
+                x[1] = int(x[1])
+                if x[1] <= 0:
+                    print(
+                        'Enter a valid number of Calculations in Millions')
+                    continue
+            except:
+                print('Enter a Number, greater than 0.')
+                continue
+            try:
+                x[2] = int(x[2])
+                if x[2] <= 0:
+                    print('Enter a valid number of loops.')
+                    continue
+            except:
+                print("Enter a valid number of loops.")
+                continue
+            if x[3].lower() == 'int':
+                x[3] = 'INT'
+            elif x[3].lower() == 'float':
+                x[3] = 'FLOAT'
+            else:
+                print('Enter a valid calc mode.')
+                continue
+            try:
+                if x[4].lower() == 'true' or x[4].lower() == 't':
+                    x[4] = True
+                elif x[4].lower() == 'false' or x[4].lower() == 'f':
+                    x[4] = False
+                else:
+                    print('Enter a proper true or false for Show Plot')
+                    continue
+            except:
+                print(
+                    'Enter a proper string, True or False, for Show Plot')
+                continue
+            try:
+                if x[5].lower() == 'true' or x[5].lower() == 't':
+                    x[5] = True
+                    break
+                elif x[5].lower() == 'false' or x[5].lower() == 'f':
+                    x[5] = False
+                    break
+                else:
+                    print('Enter a proper true or false for Save to File')
+                    continue
+            except:
+                print(
+                    'Enter a proper string, True or False, for Save to File'
+                )
+                continue
+        print(x)
+        main(x[0], x[1], x[2], x[3], x[4], x[5])
+    else:
+        print('Program Corrupt!!!')
+        exit()
+    # except:
+    #     print('Process Stopped.')
+    #     return None
 
 
 def cli():

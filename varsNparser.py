@@ -45,7 +45,7 @@ def mac():
         hwinf['SMT'] = True
     else:
         return 'Error Gathering Data'
-    #print(hwinf)
+    # print(hwinf)
     return hwinf
 
 
@@ -67,22 +67,26 @@ def linux():
             f.append(i)
     f = dict(f)
     n = {}
-    n['CPU Name'] = f['Model name']
-    n['Cores'] = f['Core(s) per socket']
-    n['Threads'] = f['CPU(s)']
+    n['CPU Name'] = str(f['Model name'])
+    n['Cores'] = (f['Core(s) per socket'])
+    n['Threads'] = int(f['CPU(s)'])
     if int(f['Core(s) per socket']) * int(f['Thread(s) per core']) == int(
             f['CPU(s)']) and int(f['Core(s) per socket']) * 2 == int(
                 f['CPU(s)']) and int(f['Thread(s) per core']) == 2:
         n['SMT'] = True
+    n['OS'] = platform.uname()[0]
     return n
 
 
 def cpuinfo():
     if sys.platform == 'darwin':
+        print('Identified as a Mac')
         return mac()
     elif sys.platform == 'win32':
+        print('Identified as a Windows PC')
         return win()
     elif sys.platform == 'linux':
+        print('Identified as a Linux System')
         return linux()
     else:
         print('Unsupported platform detected.')
